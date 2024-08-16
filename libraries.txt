@@ -1,0 +1,4 @@
+Create a virtual environemnt which has all your librarires that you will use in this project.
+
+platform101
+    - Redis - to stor and get data from cache.

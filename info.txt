@@ -1,0 +1,37 @@
+This is the project to create Generative AI platform that will have the capability of generating utterances,
+automating email seding capability, creating a Kore AI project plan (Future plan).
+  
+Phase 1:-
+    - Use cache to reduce redundance of the query.
+    - Generate Utterances by undertsanding user prompts.
+    - Create your own templates that should be maintainable and has the capacity to Guardial the data.
+    - Two Guardials input and putput, mask data like account number, phone number, person name etc..
+    - Write to negate Model Jail breaking startegy too
+
+
+    Main.py
+        - Take user input and check what the user wants to perform.
+        - If the user wants to generate utterances, call the function to generate utterances.
+        - Else send the standad message "We are still trying to improve the model".
+    
+    class FirstCache
+        - Research what cache you can use.
+        - Implement the cache in the firstCache.py file.
+        - Stores the data(embeddings of the previously scraped responses).
+        - if the embeddings does not match with the previously scraped response, 
+          go ahead and hit the Template Class.
+    
+    class TemplateCreator
+        - This class creates templates for different purposes.
+        - This calls the inputGuardial class and checks if there are any provate data and mask them, 
+          this will use the list of keywords we mention.
+        - This input is then sent to GenAI API call.
+
+    class inputGuardial
+        - Take the input and mask the sensistive data.
+        - See if the utterance is trying to Jail break the model and send the response immediately to the user.
+    
+    class InvokeGenAI:
+        - Constructor class takes the model name, Template created.
+        - Calls the method [ModelName] according to model name and generates response in string fromat.
+        - Output should be in the form of Jsonifies data.
