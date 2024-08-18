@@ -1,5 +1,5 @@
 import redis
-
+from getTemplates import TemplateCreator as TC
 class FirstCache:
 
     def __init__(self):
@@ -8,11 +8,13 @@ class FirstCache:
         
     def getCacheAnswer(self,text):
         #self.r.set(text,"Correct Response")
-        response = self.r.get(text)
+        #response = self.r.get(text)
+        response = None
         if(response is not None):
             return response
         else:
-            print("Send data to Template Class")
+           FinalResponse = TC(text=text).templateResponse
+           return FinalResponse
 
 
 

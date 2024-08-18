@@ -2,3 +2,5 @@ Create a virtual environemnt which has all your librarires that you will use in 
 
 platform101
     - Redis - to stor and get data from cache.
+    - Transformers - 2.17.0 - to get models from huggingface
+    - nltk - To do basic text analysis if needed.

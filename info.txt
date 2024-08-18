@@ -23,11 +23,11 @@ Phase 1:-
     
     class TemplateCreator
         - This class creates templates for different purposes.
-        - This calls the inputGuardial class and checks if there are any provate data and mask them, 
+        - This calls the InputGuardial class and checks if there are any private data and mask them, 
           this will use the list of keywords we mention.
         - This input is then sent to GenAI API call.
 
-    class inputGuardial
+    class InputGuardial
         - Take the input and mask the sensistive data.
         - See if the utterance is trying to Jail break the model and send the response immediately to the user.
     
