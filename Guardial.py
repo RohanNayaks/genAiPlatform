@@ -5,14 +5,16 @@ warnings.filterwarnings('ignore')
 class InputGuardial:
 
     def __init__(self,text):
-        MODEL_TAG = "Isotonic/distilbert_finetuned_ai4privacy_v2"
-        DEVICE = -1
+        # Initiating all the parametrs required to genrate entity extraction
+        MODEL_TAG = "Isotonic/distilbert_finetuned_ai4privacy_v2" # model name
+        DEVICE = -1 # Use CPU
         self.unmasked_text = text
-        self.model = pipeline("token-classification", model=MODEL_TAG, tokenizer=MODEL_TAG, device=DEVICE)
-        self.model_output = self.model(text, aggregation_strategy="simple")
-        self.result_data = self.replace_entities(entity_map=self.create_entity_map(self.model_output, text),text=text)
+        self.model = pipeline("token-classification", model=MODEL_TAG, tokenizer=MODEL_TAG, device=DEVICE) # Inititaing Pipline
+        self.model_output = self.model(text, aggregation_strategy="simple") # Genrating model output
+        self.result_data = self.replace_entities(entity_map=self.create_entity_map(self.model_output, text),text=text) # Generating the masked data
     
     def create_entity_map(self,model_output,text):
+        # creatng and entity mapper and return the mapped object
         entity_map = {}
         for token in model_output:
             start = token["start"]
@@ -22,6 +24,7 @@ class InputGuardial:
         return entity_map
     
     def replace_entities(self,text,entity_map):
+        #The method replaces the words with the entity mapped name ex:- [FirstName]
         for word in entity_map:
             if word in self.unmasked_text:
                 text = text.replace(word, f"[{entity_map[word]}]")
