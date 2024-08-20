@@ -5,8 +5,8 @@ Phase 1:-
     - Use cache to reduce redundance of the query.
     - Generate Utterances by undertsanding user prompts.
     - Create your own templates that should be maintainable and has the capacity to Guardial the data.
-    - Two Guardials input and putput, mask data like account number, phone number, person name etc..
-    - Write to negate Model Jail breaking startegy too
+    - Two Guardials input and output, mask data like account number, phone number, person name etc..
+    - Write to negate Model Jail breaking startegy too (Moved to Phase 2)
 
 
     Main.py
@@ -14,20 +14,22 @@ Phase 1:-
         - If the user wants to generate utterances, call the function to generate utterances.
         - Else send the standad message "We are still trying to improve the model".
     
-    class FirstCache
+    class FirstCache (reudcelatency.py)
         - Research what cache you can use.
         - Implement the cache in the firstCache.py file.
         - Stores the data(embeddings of the previously scraped responses).
         - if the embeddings does not match with the previously scraped response, 
           go ahead and hit the Template Class.
     
-    class TemplateCreator
+    class TemplateCreator(getTemplate.py)
         - This class creates templates for different purposes.
         - This calls the InputGuardial class and checks if there are any private data and mask them, 
-          this will use the list of keywords we mention.
-        - This input is then sent to GenAI API call.
+          this will use the Hugging face model - "Isotonic/distilbert_finetuned_ai4privacy_v2" to identify
+          and mask the data.
+        - This input is then sent to template method to generate template and that template with the masked utterance
+          is sent to GenAI class.
 
-    class InputGuardial
+    class InputGuardial(Guardial.py)
         - Take the input and mask the sensistive data.
         - See if the utterance is trying to Jail break the model and send the response immediately to the user.
     
