@@ -7,6 +7,7 @@ Phase 1:-
     - Create your own templates that should be maintainable and has the capacity to Guardial the data.
     - Two Guardials input and output, mask data like account number, phone number, person name etc..
     - Write to negate Model Jail breaking startegy too (Moved to Phase 2)
+    - Create FastAPI to integrate API and use it for the front end later.
 
 
     Main.py

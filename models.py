@@ -1,4 +1,4 @@
-
+import json
 class InvokeGenAI:
 
     def __init__(self,templateCreated):

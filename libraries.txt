@@ -5,3 +5,5 @@ platform101
     - Transformers - 2.17.0 - to get models from huggingface
     - nltk - To do basic text analysis if needed.
     - langchain_core - To get the chat templates that we can inject to any model.
+    - FastAPI - to create an ednpint APi so that this can be handled anywhere globally.
+    - uvicorn - runs the FastAPI app on the specified host and port
