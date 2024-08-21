@@ -4,3 +4,4 @@ platform101
     - Redis - to stor and get data from cache.
     - Transformers - 2.17.0 - to get models from huggingface
     - nltk - To do basic text analysis if needed.
+    - langchain_core - To get the chat templates that we can inject to any model.

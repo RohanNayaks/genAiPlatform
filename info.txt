@@ -31,9 +31,9 @@ Phase 1:-
 
     class InputGuardial(Guardial.py)
         - Take the input and mask the sensistive data.
-        - See if the utterance is trying to Jail break the model and send the response immediately to the user.
+        - See if the utterance is trying to Jail break the model and send the response immediately to the user.(Modved to Phase2)
     
-    class InvokeGenAI:
+    class InvokeGenAI(models.py):
         - Constructor class takes the model name, Template created.
         - Calls the method [ModelName] according to model name and generates response in string fromat.
         - Output should be in the form of Jsonifies data.
