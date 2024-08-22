@@ -5,7 +5,7 @@ Phase 1:-
     - Use cache to reduce redundance of the query.
     - Generate Utterances by undertsanding user prompts.
     - Create your own templates that should be maintainable and has the capacity to Guardial the data.
-    - Two Guardials input and output, mask data like account number, phone number, person name etc..
+    - Two Guardials input and output, mask data like account number, phone number, person name etc.. -- gliner will be used in the future for masked.
     - Write to negate Model Jail breaking startegy too (Moved to Phase 2)
     - Create FastAPI to integrate API and use it for the front end later.
 
