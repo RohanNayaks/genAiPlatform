@@ -4,7 +4,7 @@ class InvokeGenAI:
     def __init__(self,templateCreated):
         self.templateCreated = templateCreated
         self.model_functions = {
-            "phy3": self.phy3Model,
+            "phi3": self.phy3Model,
             "openAI": self.phy3Model,
             # Add more models and their functions here
         }
@@ -21,6 +21,6 @@ class InvokeGenAI:
             # Handle cases where the model name doesn't match any function
     
     def phy3Model(self):
-        data = f"Ph3 model response for {self.templateCreated}"
+        data = f"Phi3 model response for {self.templateCreated}"
         return data
 
