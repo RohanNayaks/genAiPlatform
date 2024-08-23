@@ -1,5 +1,6 @@
 This is the project to create Generative AI platform that will have the capability of generating utterances,
 automating email seding capability, creating a Kore AI project plan (Future plan).
+checking the new branch
   
 Phase 1:-
     - Use cache to reduce redundance of the query.
