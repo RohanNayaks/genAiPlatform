@@ -246,10 +246,6 @@ To contribute to this project:
 3. Test thoroughly
 4. Submit a pull request
 
-## License
-
-[Add your license information here]
-
 ## Support
 
 For issues, questions, or suggestions, please create an issue in the repository.
