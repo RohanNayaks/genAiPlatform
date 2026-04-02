@@ -233,7 +233,7 @@ The `InputGuardial` class can be extended to support additional entity types or 
 - [ ] Advanced caching strategies
 - [ ] Model jailbreak prevention
 - [ ] GLiNER integration for improved entity extraction
-- [ ] Kore AI project plan generation
+- [ ] chatbot project plan generation
 - [ ] Additional AI model integrations
 - [ ] API authentication and rate limiting
 - [ ] Comprehensive logging and monitoring
