@@ -27,7 +27,7 @@ This project creates a Generative AI platform with the capability of:
 - Additional model integrations
 
 ### Phase 3 (Future)
-- Kore AI project plan creation
+- chatbot project plan creation
 
 ## Architecture
 
