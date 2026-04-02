@@ -1,5 +1,5 @@
 from Guardial import InputGuardial as IG
-from langchain_core.prompts import ChatPromptTemplate,PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from loguru import logger
 
 class TemplateCreator:
