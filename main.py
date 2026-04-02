@@ -1,9 +1,13 @@
 from fastapi import FastAPI, Query
 from reducelatency import FirstCache as fc
+from loguru import logger
 import warnings
 
 # Suppress warnings
 warnings.filterwarnings('ignore')
+
+# Configure logger
+logger.add("logs/app.log", rotation="500 MB", retention="7 days")
 
 # Create FastAPI instance
 app = FastAPI()
@@ -14,11 +18,15 @@ first_cache = fc()
 # Define a GET endpoint
 @app.get("/getResponse")
 def get_response(text: str = Query(..., description="Input text"), model: str = Query(..., description="Model name")):
+    logger.info(f"[API] Received request - text: {text}, model: {model}")
     if "generate" in text.lower():
         # Triggers the Cache method.
+        logger.info("[API] 'generate' keyword found, triggering cache method")
         response = first_cache.getCacheAnswer(text=text, modelName=model)
+        logger.info(f"[API] Response generated successfully: {response}")
         return {"response": response}
     else:
+        logger.info("[API] 'generate' keyword not found, returning standard response")
         return {"response": "This is the standard response"}
 
 # Main method to run the app

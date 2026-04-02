@@ -1,26 +1,35 @@
 from Guardial import InputGuardial as IG
 from langchain_core.prompts import ChatPromptTemplate,PromptTemplate
+from loguru import logger
+
 class TemplateCreator:
 
     def __init__(self,text):
         #Initiing the variable to generate Template
+        logger.info(f"[TemplateCreator] Initializing with text: {text}")
         self.text = text
         self.templateResponse = self.callTemplate()
-    
+        logger.info("[TemplateCreator] Template creation completed")
+
     def getMaskeddata(self,text):
         #this method calls Guardial class and masks the data
+        logger.info(f"[TemplateCreator.getMaskeddata] Getting masked data for text: {text}")
         maskedData = IG(text).result_data
+        logger.info(f"[TemplateCreator.getMaskeddata] Masked data: {maskedData}")
         return maskedData
-    
+
     def generateIntentTemplate(self,text):
         #The method takes the data and generates the template
+        logger.info(f"[TemplateCreator.generateIntentTemplate] Generating intent template")
         data = self.getMaskeddata(text)
         return data
 
     def callTemplate(self):
+        logger.info("[TemplateCreator.callTemplate] Creating prompt template")
         maskedUtterance = self.generateIntentTemplate(self.text)
         prompt_template = PromptTemplate.from_template(
             "Generate utterance for the Intent: {adjective} here are few examples {content}."
         )
         prompt = prompt_template.format(adjective=maskedUtterance, content=maskedUtterance)
+        logger.info(f"[TemplateCreator.callTemplate] Prompt template created: {prompt}")
         return prompt
