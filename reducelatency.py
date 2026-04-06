@@ -11,9 +11,9 @@ class FirstCache:
         logger.info("[FirstCache] Initialized Redis connection")
 
 
-    def getCacheAnswer(self,text,modelName):
+    def getCacheAnswer(self, text, modelName, masking=None, is_masking=False):
         #Checks if the redis already as the value or generates a new response
-        logger.info(f"[FirstCache.getCacheAnswer] Starting cache check for text: {text}, model: {modelName}")
+        logger.info(f"[FirstCache.getCacheAnswer] Starting cache check for text: {text}, model: {modelName}, is_masking: {is_masking}")
         #self.r.set(text,"Correct Response")
         #response = self.r.get(text)
         response = None
@@ -22,7 +22,10 @@ class FirstCache:
             return response
         else:
            logger.info("[FirstCache.getCacheAnswer] Cache miss - generating new response")
-           utteranceWithTemplate = TC(text=text).templateResponse
+           if is_masking and masking is not None:
+               utteranceWithTemplate = TC(text=text, masking=masking, is_masking=is_masking).templateResponse
+           else:
+               utteranceWithTemplate = TC(text=text, is_masking=is_masking).templateResponse
            logger.info("[FirstCache.getCacheAnswer] Template created, invoking model")
            invokeGenAI = IGI(templateCreated=utteranceWithTemplate)
            modelResponse = invokeGenAI.invoke_model(model_name=modelName)

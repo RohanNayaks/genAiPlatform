@@ -8,7 +8,8 @@ class InvokeGenAI:
         self.model_functions = {
             "phi3": self.phy3Model,
             "openAI": self.OpenAiModel,
-            # Add more models and their functions here
+            "claude": self.ClaudeModel,
+            "gemini": self.GeminiModel,
         }
 
     def invoke_model(self, model_name):
@@ -35,5 +36,17 @@ class InvokeGenAI:
         logger.info("[InvokeGenAI.OpenAiModel] Executing OpenAI model")
         data = f"OpenAI model response for {self.templateCreated}"
         logger.info(f"[InvokeGenAI.OpenAiModel] OpenAI response: {data}")
+        return data
+
+    def ClaudeModel(self):
+        logger.info("[InvokeGenAI.ClaudeModel] Executing Claude model")
+        data = f"Claude model response for {self.templateCreated}"
+        logger.info(f"[InvokeGenAI.ClaudeModel] Claude response: {data}")
+        return data
+
+    def GeminiModel(self):
+        logger.info("[InvokeGenAI.GeminiModel] Executing Gemini model")
+        data = f"Gemini model response for {self.templateCreated}"
+        logger.info(f"[InvokeGenAI.GeminiModel] Gemini response: {data}")
         return data
 

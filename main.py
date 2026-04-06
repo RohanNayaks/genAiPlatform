@@ -1,5 +1,6 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
 from reducelatency import FirstCache as fc
+from jailbreak import JailbreakGuard
 from loguru import logger
 import warnings
 
@@ -12,17 +13,29 @@ logger.add("logs/app.log", rotation="500 MB", retention="7 days")
 # Create FastAPI instance
 app = FastAPI()
 
-# Instantiate FirstCache
+# Instantiate FirstCache and JailbreakGuard
 first_cache = fc()
+jailbreak_guard = JailbreakGuard()
 
 # Define a GET endpoint
-@app.get("/getResponse")
-def get_response(text: str = Query(..., description="Input text"), model: str = Query(..., description="Model name")):
-    logger.info(f"[API] Received request - text: {text}, model: {model}")
+@app.post("/getResponse")
+def get_response(
+    text: str = Query(..., description="Input text"),
+    model: str = Query(..., description="Model name"),
+    masking: str = Query(None, description="Masking strategy: 'gliner' or default"),
+    is_masking: bool = Query(False, description="Enable masking"),
+):
+    logger.info(f"[API] Received request - text: {text}, model: {model}, masking: {masking}, is_masking: {is_masking}")
+
+    # Jailbreak check BEFORE cache (early exit)
+    if jailbreak_guard.is_jailbreak(text):
+        logger.warning(f"[API] Jailbreak attempt detected, rejecting request: {text}")
+        raise HTTPException(status_code=400, detail="Request rejected: potential jailbreak detected")
+
     if "generate" in text.lower():
         # Triggers the Cache method.
         logger.info("[API] 'generate' keyword found, triggering cache method")
-        response = first_cache.getCacheAnswer(text=text, modelName=model)
+        response = first_cache.getCacheAnswer(text=text, modelName=model, masking=masking, is_masking=is_masking)
         logger.info(f"[API] Response generated successfully: {response}")
         return {"response": response}
     else:

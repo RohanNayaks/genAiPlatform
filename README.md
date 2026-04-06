@@ -21,10 +21,11 @@ This project creates a Generative AI platform with the capability of:
 - ✅ FastAPI integration for API and frontend
 - ✅ Phi3 model invocation with templates
 
-### Phase 2 (Planned)
-- Model jailbreak prevention strategies
-- Enhanced data masking using GLiNER
-- Additional model integrations
+### Phase 2 (In Progress)
+- ✅ Jailbreak detection and prevention (GlinerGuardial.py)
+- ✅ Enhanced data masking using GLiNER for better entity recognition
+- 🔄 Additional model integrations
+- 🔄 Response format standardization
 
 ### Phase 3 (Future)
 - chatbot project plan creation
@@ -107,10 +108,15 @@ The FastAPI server will start on `http://localhost:8000`
 curl "http://localhost:8000/getResponse?text=Generate%20Utterances%20for%20Login%20Intent&model=phi3"
 ```
 
-**Response**:
+**Example Payload**:
+```bash
+curl "http://localhost:8000/getResponse?text=Generate%20Utterances%20for%20Login%20Intent&model=phi3"
+```
+
+**Example Response**:
 ```json
 {
-  "response": "Phi3 model response for generated utterances template"
+  "response": "Login intent utterances:\n- Please sign me in\n- I want to access my account\n- Log me into the system\n- Authenticate my credentials\n- Grant me access"
 }
 ```
 
