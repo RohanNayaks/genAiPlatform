@@ -7,7 +7,7 @@ class InvokeGenAI:
         self.templateCreated = templateCreated
         self.model_functions = {
             "phi3": self.phy3Model,
-            "openAI": self.OpenAiModel,
+            "openai": self.OpenAiModel,
             "claude": self.ClaudeModel,
             "gemini": self.GeminiModel,
         }
@@ -15,7 +15,7 @@ class InvokeGenAI:
     def invoke_model(self, model_name):
         # Get the corresponding function based on the model name
         logger.info(f"[InvokeGenAI.invoke_model] Invoking model: {model_name}")
-        func = self.model_functions.get(model_name)
+        func = self.model_functions.get(model_name.lower())
 
         if func:
             logger.info(f"[InvokeGenAI.invoke_model] Model function found for {model_name}, executing")

@@ -1,7 +1,8 @@
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, HTTPException
 from reducelatency import FirstCache as fc
 from jailbreak import JailbreakGuard
 from loguru import logger
+from schemas import ResponseRequest, ResponseOutput, ErrorResponse
 import warnings
 
 # Suppress warnings
@@ -17,30 +18,42 @@ app = FastAPI()
 first_cache = fc()
 jailbreak_guard = JailbreakGuard()
 
-# Define a GET endpoint
-@app.post("/getResponse")
-def get_response(
-    text: str = Query(..., description="Input text"),
-    model: str = Query(..., description="Model name"),
-    masking: str = Query(None, description="Masking strategy: 'gliner' or default"),
-    is_masking: bool = Query(False, description="Enable masking"),
-):
-    logger.info(f"[API] Received request - text: {text}, model: {model}, masking: {masking}, is_masking: {is_masking}")
+# POST endpoint with request body
+@app.post("/getResponse", response_model=ResponseOutput, responses={400: {"model": ErrorResponse}, 500: {"model": ErrorResponse}})
+def get_response(request: ResponseRequest) -> ResponseOutput:
+    try:
+        logger.info(f"[API] Received request - text: {request.text}, model: {request.model}, masking: {request.masking}, is_masking: {request.is_masking}")
 
-    # Jailbreak check BEFORE cache (early exit)
-    if jailbreak_guard.is_jailbreak(text):
-        logger.warning(f"[API] Jailbreak attempt detected, rejecting request: {text}")
-        raise HTTPException(status_code=400, detail="Request rejected: potential jailbreak detected")
+        # Jailbreak check BEFORE cache (early exit)
+        if jailbreak_guard.is_jailbreak(request.text):
+            logger.warning(f"[API] Jailbreak attempt detected, rejecting request: {request.text}")
+            raise HTTPException(status_code=400, detail="Request rejected: potential jailbreak detected")
 
-    if "generate" in text.lower():
-        # Triggers the Cache method.
-        logger.info("[API] 'generate' keyword found, triggering cache method")
-        response = first_cache.getCacheAnswer(text=text, modelName=model, masking=masking, is_masking=is_masking)
-        logger.info(f"[API] Response generated successfully: {response}")
-        return {"response": response}
-    else:
-        logger.info("[API] 'generate' keyword not found, returning standard response")
-        return {"response": "This is the standard response"}
+        if "generate" in request.text.lower():
+            # Triggers the Cache method.
+            logger.info("[API] 'generate' keyword found, triggering cache method")
+            response = first_cache.getCacheAnswer(
+                text=request.text,
+                modelName=request.model,
+                masking=request.masking,
+                is_masking=request.is_masking
+            )
+
+            if response is None:
+                logger.error("[API] Cache returned None response")
+                raise HTTPException(status_code=500, detail="Failed to generate response from model")
+
+            logger.info(f"[API] Response generated successfully: {response}")
+            return ResponseOutput(response=response)
+        else:
+            logger.info("[API] 'generate' keyword not found, returning standard response")
+            return ResponseOutput(response="This is the standard response")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[API] Error: {type(e).__name__}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Something went wrong")
 
 # Main method to run the app
 if __name__ == "__main__":
