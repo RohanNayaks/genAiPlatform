@@ -1,4 +1,4 @@
-from Guardial import InputGuardial as IG
+from guards.Guardial import InputGuardial as IG
 from langchain_core.prompts import PromptTemplate
 from loguru import logger
 
@@ -17,7 +17,7 @@ class TemplateCreator:
         #this method calls Guardial class and masks the data
         logger.info(f"[TemplateCreator.getMaskeddata] Getting masked data for text: {text}")
         if self.masking == "gliner":
-            from GlinerGuardial import GLiNERGuardial
+            from guards.GlinerGuardial import GLiNERGuardial
             maskedData = GLiNERGuardial(text).result_data
         else:
             maskedData = IG(text).result_data

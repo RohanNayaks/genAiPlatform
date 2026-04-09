@@ -17,7 +17,7 @@ class DistilBertMasker(BaseMasker):
     """S - Single responsibility: mask PII using DistilBERT model only."""
 
     def mask(self, text: str) -> str:
-        from Guardial import InputGuardial
+        from guards.Guardial import InputGuardial
         logger.info("[DistilBertMasker] Masking text using DistilBERT")
         return InputGuardial(text).result_data
 
@@ -26,7 +26,7 @@ class GlinerMasker(BaseMasker):
     """S - Single responsibility: mask PII using GLiNER model only."""
 
     def mask(self, text: str) -> str:
-        from GlinerGuardial import GLiNERGuardial
+        from guards.GlinerGuardial import GLiNERGuardial
         logger.info("[GlinerMasker] Masking text using GLiNER")
         return GLiNERGuardial(text).result_data
 
