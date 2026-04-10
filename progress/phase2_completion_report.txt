@@ -1,0 +1,391 @@
+╔═════════════════════════════════════════════════════════════════╗
+║              PHASE 2 COMPLETION REPORT                          ║
+║              Generative AI Platform                             ║
+║              Date: 2026-04-10                                   ║
+╚═════════════════════════════════════════════════════════════════╝
+
+PHASE 2 STATUS: ✅ COMPLETE
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PHASE 2 OBJECTIVES:
+
+1. ✅ Jailbreak Detection & Prevention (guards/jailbreak.py)
+2. ✅ Enhanced Data Masking via GLiNER (guards/GlinerGuardial.py)
+3. ✅ SOLID-Compliant Service Layer Refactor (services/)
+4. ✅ FastAPI Router Architecture (routers/)
+5. ✅ Extended Model Registry — Claude & Gemini Stubs
+6. ✅ Pydantic Request/Response Schemas (schemas.py)
+7. ✅ Phase 2 Test Suite (test/test_phase2.py)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DELIVERABLE 1: JAILBREAK DETECTION
+File: guards/jailbreak.py
+Service: services/guard_service.py
+
+The JailbreakGuard (and its SOLID-compliant twin JailbreakGuardService)
+provides an early-exit security layer that intercepts malicious inputs
+before any processing occurs.
+
+Detection Strategy — Two-Layer Approach:
+
+  Layer 1: Banned Keyword Matching (16 keywords, case-insensitive)
+  ┌────────────────────────────────────────────────────────────────┐
+  │  "ignore previous instructions"   "ignore all instructions"   │
+  │  "disregard your"                 "forget your instructions"  │
+  │  "you are now"                    "act as"                    │
+  │  "pretend you are"                "pretend to be"             │
+  │  "roleplay as"                    "jailbreak"                 │
+  │  "bypass"                         "override instructions"     │
+  │  "do anything now"                "dan mode"                  │
+  │  "evil mode"                      "unrestricted mode"         │
+  └────────────────────────────────────────────────────────────────┘
+
+  Layer 2: Structural Injection Pattern Detection (7 regex patterns)
+  ┌────────────────────────────────────────────────────────────────┐
+  │  r"system\s*:\s*you"          → system: you are ...           │
+  │  r"<\s*system\s*>"            → <system> tags                 │
+  │  r"\[system\]"                → [system] markers              │
+  │  r"###\s*instruction"         → ### Instruction: ...          │
+  │  r"---\s*new\s*prompt"        → --- new prompt ---            │
+  │  r"ignore\s+.{0,30}(above|   → ignore X instructions         │
+  │    prior|previous|preceding)" │                               │
+  │  r"prompt\s*injection"        → prompt injection              │
+  └────────────────────────────────────────────────────────────────┘
+
+Method Signature:
+  is_jailbreak(text: str) -> bool
+  Returns True immediately on first match (early exit).
+  All checks are case-insensitive (text.lower() applied).
+
+Integration Point:
+  - Router (routers/response_router.py) calls guard.is_jailbreak()
+    as the FIRST check on every incoming request.
+  - On detection: raises HTTP 400 with message
+    "Request rejected: potential jailbreak detected"
+  - Guard check runs BEFORE "generate" keyword check and cache access.
+
+SOLID Design:
+  - BaseGuard ABC defines the is_jailbreak() interface
+  - JailbreakGuardService implements BaseGuard
+  - Router depends on BaseGuard abstraction via FastAPI Depends()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DELIVERABLE 2: ENHANCED DATA MASKING — GLiNER
+File: guards/GlinerGuardial.py
+Service: services/masking_service.py
+
+GLiNERGuardial is a drop-in replacement for the Phase 1 DistilBERT
+masker (InputGuardial), providing zero-shot entity recognition without
+task-specific fine-tuning.
+
+Model: urchade/gliner_mediumv2.1 (HuggingFace)
+Type:  Zero-shot Generalist Named Entity Recognition (GLiNER)
+
+Default Entity Labels (8 categories):
+  person, email, phone number, address,
+  organization, date, credit card, ssn
+
+Processing Pipeline:
+  Text Input
+    → GLiNER.from_pretrained("urchade/gliner_mediumv2.1")
+    → model.predict_entities(text, labels, threshold=0.5)
+    → create_entity_map(): {entity_text → LABEL_UPPERCASE}
+    → replace_entities(): text.replace(entity, "[LABEL]")
+    → result_data (masked text)
+
+Output Format:
+  Entities replaced as [LABEL] — e.g., "John" → "[PERSON]"
+  Consistent with Phase 1 InputGuardial output format.
+
+Key Differences vs Phase 1 DistilBERT Masker:
+  ┌──────────────────┬─────────────────────────┬──────────────────────┐
+  │ Aspect           │ Phase 1 (DistilBERT)     │ Phase 2 (GLiNER)     │
+  ├──────────────────┼─────────────────────────┼──────────────────────┤
+  │ Model            │ Isotonic/distilbert_     │ urchade/gliner_      │
+  │                  │ finetuned_ai4privacy_v2  │ mediumv2.1           │
+  ├──────────────────┼─────────────────────────┼──────────────────────┤
+  │ Approach         │ Fine-tuned classification│ Zero-shot NER        │
+  ├──────────────────┼─────────────────────────┼──────────────────────┤
+  │ Output keys      │ start, end, entity_group │ text, label, score   │
+  ├──────────────────┼─────────────────────────┼──────────────────────┤
+  │ Threshold        │ Model default            │ Configurable (0.5)   │
+  ├──────────────────┼─────────────────────────┼──────────────────────┤
+  │ Entity types     │ Fixed (AI4Privacy set)   │ Customizable labels  │
+  └──────────────────┴─────────────────────────┴──────────────────────┘
+
+Masking Strategy Selection (MaskingService):
+  POST body field: "masking": "gliner"  → uses GLiNERGuardial
+  POST body field: "masking": "default" → uses InputGuardial (Phase 1)
+  POST body field: omitted              → defaults to "default"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DELIVERABLE 3: SOLID SERVICE LAYER REFACTOR
+Directory: services/
+
+Phase 2 introduces a full service layer applying all five SOLID
+principles to replace the monolithic Phase 1 class hierarchy.
+
+  guard_service.py   — JailbreakGuardService (BaseGuard ABC)
+  masking_service.py — MaskingService + BaseMasker ABC
+                       DistilBertMasker / GlinerMasker
+  template_service.py— TemplateService (builds LangChain prompts)
+  model_service.py   — ModelService + BaseModelProvider ABC
+                       Phi3 / OpenAI / Claude / Gemini providers
+  cache_service.py   — CacheService (Redis with graceful fallback)
+
+SOLID Principle Mapping:
+  S — Single Responsibility
+      Each service class has exactly one job (guard, mask, template,
+      model-route, cache). No class crosses concerns.
+
+  O — Open/Closed
+      ModelService._providers dict and MaskingService._maskers dict
+      allow new models/maskers to be registered without modifying
+      existing service code.
+
+  L — Liskov Substitution
+      DistilBertMasker and GlinerMasker are interchangeable through
+      BaseMasker. All four model providers are interchangeable via
+      BaseModelProvider. Callers need not know which concrete class
+      they receive.
+
+  I — Interface Segregation
+      BaseGuard exposes only is_jailbreak().
+      BaseMasker exposes only mask().
+      BaseModelProvider exposes only generate().
+      Each interface is minimal and focused.
+
+  D — Dependency Inversion
+      TemplateService receives MaskingService via constructor injection.
+      CacheService receives TemplateService and ModelService via
+      constructor injection. Router receives services via FastAPI
+      Depends() — no hard imports of concrete classes in consumers.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DELIVERABLE 4: FASTAPI ROUTER & ENDPOINT CHANGES
+File: routers/response_router.py
+Main: main.py (simplified — now just mounts the router)
+
+Phase 2 API Endpoint:
+
+  POST /getResponse
+
+  Request Body (JSON):
+  {
+    "text":       string  (required, min_length=1)
+    "model":      string  (required: "phi3"|"openai"|"claude"|"gemini")
+    "masking":    string  (optional: "gliner"|"default", default=null)
+    "is_masking": boolean (optional, default=false)
+  }
+
+  Response (200 OK):
+  {
+    "response": string
+  }
+
+  Error Responses:
+    400 Bad Request  → Jailbreak detected in input text
+    500 Internal     → Unexpected processing error
+
+  Request Processing Flow:
+    ┌─────────────────────────────────────────────────────────┐
+    │  POST /getResponse                                      │
+    │     ↓                                                   │
+    │  JailbreakGuardService.is_jailbreak(text)               │
+    │     ├─ True  → HTTP 400 (rejected)                      │
+    │     └─ False → ↓                                        │
+    │  "generate" in text.lower()?                            │
+    │     ├─ Yes → CacheService.get_response(                 │
+    │     │          text, model, is_masking, masking)         │
+    │     │          ↓                                        │
+    │     │       Redis cache check                           │
+    │     │          ├─ Hit  → return cached string           │
+    │     │          └─ Miss → TemplateService.build()        │
+    │     │                    → ModelService.generate()      │
+    │     │                    → Redis.set() + return         │
+    │     └─ No  → "This is the standard response"            │
+    └─────────────────────────────────────────────────────────┘
+
+Changes from Phase 1:
+  - Endpoint changed from GET to POST
+  - Jailbreak guard check added as first step
+  - Masking strategy selectable per request ("gliner" / "default")
+  - is_masking flag enables/disables PII masking
+  - Router modularised into routers/response_router.py
+  - main.py reduced to app setup + router mount only
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DELIVERABLE 5: EXTENDED MODEL REGISTRY
+File: services/model_service.py
+
+Four model providers registered in ModelService._providers:
+
+  "phi3"   → Phi3Provider    (Phase 1, retained)
+  "openai" → OpenAIProvider  (Phase 1, retained)
+  "claude" → ClaudeProvider  (Phase 2 addition)
+  "gemini" → GeminiProvider  (Phase 2 addition)
+
+Each provider implements BaseModelProvider.generate(prompt) → str.
+Current implementations are stubs returning formatted strings.
+Ready for real API integration without modifying ModelService or router.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DELIVERABLE 6: PYDANTIC SCHEMAS
+File: schemas.py
+
+Three Pydantic v2 models enforce strict typing on all API boundaries:
+
+  ResponseRequest  — Validates incoming POST body
+  ResponseOutput   — Structures the success response
+  ErrorResponse    — Structures 400/500 error detail
+
+All models include json_schema_extra examples for auto-generated
+OpenAPI/Swagger documentation at /docs.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DELIVERABLE 7: PHASE 2 TEST SUITE
+File: test/test_phase2.py
+
+Test Categories and Coverage:
+
+  TestJailbreakGuard (12 tests)
+  ─────────────────────────────
+  - Initialization: attributes present, types correct
+  - Clean text:     normal input returns False
+  - Banned keywords: case-insensitive detection across multiple keywords
+    (ignore previous instructions, act as, dan mode, bypass,
+     pretend to be)
+  - Regex patterns: <system> tag, ### Instruction header
+  - Edge cases:     empty string, return type always bool
+
+  TestGLiNERGuardial (7 tests)
+  ────────────────────────────
+  - Full initialization: result_data populated on real model load
+  - create_entity_map: structure validation, mock output parsing
+  - replace_entities: correct [LABEL] substitution, no-match passthrough
+  - Full init with mock: GLiNER.from_pretrained mocked end-to-end
+
+  TestInvokeGenAIPhase2 (8 tests)
+  ────────────────────────────────
+  - Claude and Gemini present in model registry
+  - invoke_model("claude") / invoke_model("gemini") return strings
+  - Direct ClaudeModel() and GeminiModel() method calls
+  - All four models registered (phi3, openAI, claude, gemini)
+  - Regression: Phase 1 phi3 and openAI still work
+
+  TestMainEndpointPhase2 (6 tests)
+  ─────────────────────────────────
+  - Jailbreak detected → HTTP 400 with "jailbreak" in detail
+  - Clean request proceeds → HTTP 200, cache result returned
+  - masking=gliner forwarded correctly to getCacheAnswer
+  - masking omitted → defaults to None in getCacheAnswer
+  - Non-generate text bypasses cache → standard response
+  - Jailbreak check fires even for non-generate text
+
+  TestTemplateCreatorPhase2 (3 tests)
+  ────────────────────────────────────
+  - masking param accepted, stored on instance
+  - masking="gliner" stored correctly
+  - masking defaults to None
+
+  TestFirstCachePhase2 (2 tests)
+  ────────────────────────────────
+  - getCacheAnswer passes masking="gliner" to TemplateCreator
+  - masking=None preserves Phase 1 TC call signature (regression guard)
+
+Total Phase 2 Tests: 38
+Expected Status:      All PASSING ✅
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ARCHITECTURE OVERVIEW (Phase 2):
+
+  POST /getResponse
+     ↓
+  FastAPI Router (routers/response_router.py)
+     ↓
+  JailbreakGuardService.is_jailbreak()   ← BaseGuard (ABC)
+     ├─ Blocked → HTTP 400
+     └─ Passed  ↓
+  "generate" keyword check
+     └─ Yes ↓
+  CacheService.get_response()
+     ├─ Redis Hit  → return cached
+     └─ Redis Miss ↓
+        TemplateService.build()
+           └─ MaskingService.apply()
+                 ├─ "gliner"   → GlinerMasker → GLiNERGuardial
+                 └─ "default"  → DistilBertMasker → InputGuardial
+        ModelService.generate()
+           ├─ "phi3"   → Phi3Provider
+           ├─ "openai" → OpenAIProvider
+           ├─ "claude" → ClaudeProvider
+           └─ "gemini" → GeminiProvider
+        Redis.set() → return response
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DEPENDENCIES ADDED IN PHASE 2:
+
+  gliner           — Zero-shot NER model library
+  torch            — PyTorch (GLiNER dependency)
+  fastapi          — Web framework (was missing from requirements.txt)
+  uvicorn          — ASGI server (was missing from requirements.txt)
+  starlette        — ASGI toolkit, FastAPI foundation (was missing)
+
+All other dependencies carried forward from Phase 1.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FILE STRUCTURE CHANGES (Phase 1 → Phase 2):
+
+  ADDED:
+    guards/                       ← guardrails namespace
+    guards/__init__.py
+    guards/jailbreak.py           ← JailbreakGuard
+    guards/GlinerGuardial.py      ← GLiNERGuardial
+    guards/Guardial.py            ← InputGuardial (moved from root)
+    services/                     ← SOLID service layer
+    services/__init__.py
+    services/guard_service.py     ← JailbreakGuardService (BaseGuard)
+    services/masking_service.py   ← MaskingService + strategies
+    services/model_service.py     ← ModelService + 4 providers
+    services/template_service.py  ← TemplateService
+    services/cache_service.py     ← CacheService (Redis)
+    routers/                      ← FastAPI routing
+    routers/__init__.py
+    routers/response_router.py    ← POST /getResponse endpoint
+    schemas.py                    ← Pydantic request/response models
+    test/test_phase2.py           ← 38 Phase 2 tests
+    progress/phase2_completion_report.txt
+
+  MODIFIED:
+    main.py                       ← Simplified (router mount only)
+    requirements.txt              ← Added fastapi, uvicorn, starlette
+
+  RETAINED (unchanged):
+    reducelatency.py              ← FirstCache (Phase 1 legacy)
+    models.py                     ← InvokeGenAI (Phase 1 legacy)
+    getTemplates.py               ← TemplateCreator (Phase 1 legacy)
+    test/test_phase1.py           ← 24 Phase 1 tests
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+NEXT STEPS (Phase 3 Candidates):
+
+  - Wire real Claude / Gemini API clients into ClaudeProvider / GeminiProvider
+  - Add authentication / API key validation middleware
+  - Expand jailbreak detection with semantic similarity scoring
+  - Add rate limiting per model endpoint
+  - Containerise with Docker + Redis compose setup
+  - Add async support to CacheService for concurrent requests
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
